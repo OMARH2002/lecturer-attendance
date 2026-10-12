@@ -275,7 +275,10 @@ const T={
 "Session QR is available locally, but online cancellation checks could not be registered. Reconnect and generate a new session before relying on automatic cancellation notices.":"رمز الجلسة متاح محلياً، لكن تعذر تسجيله للتحقق من الإلغاء عبر الإنترنت. أعد الاتصال وأنشئ جلسة جديدة قبل الاعتماد على إشعارات الإلغاء التلقائية.",
 "SESSION CANCELLED LOCALLY ONLY. No internet connection, so students will not receive the automatic cancellation status. Show them the cancellation notice QR.":"تم إلغاء الجلسة محلياً فقط. لا يوجد اتصال بالإنترنت، لذلك لن يتلقى الطلاب حالة الإلغاء تلقائياً. اعرض عليهم رمز إشعار الإلغاء.",
 "SESSION CANCELLED LOCALLY, BUT THE ONLINE STATUS COULD NOT BE UPDATED. Keep the cancellation notice visible and check the connection.":"تم إلغاء الجلسة محلياً، لكن تعذر تحديث الحالة عبر الإنترنت. أبقِ رمز إشعار الإلغاء ظاهراً وتحقق من الاتصال.",
-"SESSION CANCELLED. Students who check online before generating their confirmation QR will be told to scan a new session QR.":"تم إلغاء الجلسة. سيُطلب من الطلاب المتصلين بالإنترنت مسح رمز جلسة جديد قبل إنشاء رمز التأكيد."
+"SESSION CANCELLED. Students who check online before generating their confirmation QR will be told to scan a new session QR.":"تم إلغاء الجلسة. سيُطلب من الطلاب المتصلين بالإنترنت مسح رمز جلسة جديد قبل إنشاء رمز التأكيد.",
+"SESSION ENDED LOCALLY ONLY. No internet connection, so students cannot be told automatically.":"تم إنهاء الجلسة محلياً فقط. لا يوجد اتصال بالإنترنت، لذلك لا يمكن إبلاغ الطلاب تلقائياً.",
+"SESSION ENDED LOCALLY, BUT THE ONLINE STATUS COULD NOT BE UPDATED. Check the connection.":"تم إنهاء الجلسة محلياً، لكن تعذر تحديث الحالة عبر الإنترنت. تحقق من الاتصال.",
+"SESSION ENDED. Online checks will prevent students from generating confirmation QR codes for this session. It was not marked as cancelled.":"تم إنهاء الجلسة. سيمنع التحقق عبر الإنترنت الطلاب من إنشاء رموز تأكيد لهذه الجلسة. لم يتم تسجيلها كجلسة ملغاة."
 };
 let lang="en";try{lang=localStorage.getItem("attendanceLanguage")||"en"}catch(e){}
 let queued=false;
