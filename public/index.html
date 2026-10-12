@@ -64,7 +64,7 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 24px;color:var(--muted);font
 <div class="panel">
 <h2>4. Export attendance</h2>
 <div class="stats"><div class="stat"><strong id="recordCount">0</strong><span>Attendance records</span></div><div class="stat"><strong id="sessionCount">0</strong><span>Sessions saved</span></div></div>
-<div class="actions"><button id="exportCsv" type="button">Export CSV for Excel</button><button class="secondary" id="exportBackup" type="button">Export backup JSON</button><button class="danger" id="clearRecords" type="button">Clear all local records</button></div>
+<div class="actions"><button id="exportCsv" type="button">Export CSV for Excel</button><button class="secondary" id="exportBackup" type="button">Export backup JSON</button><button id="syncAttendance" type="button">Sync when online</button><button class="danger" id="clearRecords" type="button">Clear all local records</button></div><div id="syncStatus" class="status">Local storage is active. Sign in and connect to the internet to sync this lecturer account to the cloud.</div>
 <p class="muted small">Export after each class. Records live only in this browser's local storage and can be lost if site data is cleared or the app is removed. Keep exported files safe.</p>
 <div class="tablewrap"><table><thead><tr><th>Student</th><th>REG ID</th><th>Session</th><th>Time</th><th>Check</th></tr></thead><tbody id="recordsTable"><tr><td colspan="5" class="muted">No attendance records yet.</td></tr></tbody></table></div>
 </div>
@@ -106,7 +106,7 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 24px;color:var(--muted);font
 </div>
 </section>
 </main>
-<footer>Offline use requires an initial online visit and installation/cache on each device. The app does not upload student information to a server. Camera access requires permission and a secure HTTPS app origin.</footer>
+<footer>Attendance is saved locally first. Use Sync when online to copy this lecturer account's records to its authenticated cloud database; keep CSV/JSON backups as well. Camera access requires permission and a secure HTTPS app origin.</footer>
 <script src="/qrcode.min.js"></script>
 <script src="/jsQR.js"></script>
 <script>
@@ -199,6 +199,21 @@ function downloadBlob(content,type,filename){const blob=new Blob([content],{type
 function csvCell(v){return '"'+String(v??"").replace(/"/g,'""')+'"'}
 $("exportCsv").addEventListener("click",()=>{if(!data.records.length){alert("There are no attendance records to export yet.");return}const rows=[["COURSE","DEPARTMENT","GROUP","STUDENT NAME","REG ID","STUDENT DEPARTMENT","SUBMITTED AT","SCANNED AT","VALIDATION","SESSION ID"],...data.records.map(r=>[r.course,r.department,r.group,r.name,r.studentId,r.studentDepartment,new Date(r.submittedAt).toISOString(),new Date(r.scannedAt).toISOString(),r.validation,r.sessionId])];downloadBlob("\ufeff"+rows.map(r=>r.map(csvCell).join(",")).join("\r\n"),"text/csv;charset=utf-8","offline-attendance-"+new Date().toISOString().slice(0,10)+".csv")});
 $("exportBackup").addEventListener("click",()=>downloadBlob(JSON.stringify({exportedAt:new Date().toISOString(),sessions:data.sessions,records:data.records},null,2),"application/json","offline-attendance-backup.json"));
+async function syncAttendance(){
+ if(!navigator.onLine){showStatus("syncStatus","You are offline. Records remain saved locally and can sync when internet returns.","warn");return}
+ const button=$("syncAttendance");button.disabled=true;showStatus("syncStatus","Syncing local attendance with the signed-in lecturer account…","warn");
+ try{
+  const response=await fetch("/api/attendance/sync",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({sessions:data.sessions,records:data.records})});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(result.error||("Sync failed (HTTP "+response.status+"). Sign in to the lecturer project and retry."));
+  const sessionMap=new Map();for(const s of [...(result.sessions||[]),...data.sessions])if(s&&s.sessionId)sessionMap.set(s.sessionId,s);
+  const recordMap=new Map();for(const r of [...(result.records||[]),...data.records])if(r&&r.sessionId&&r.studentId)recordMap.set(r.sessionId+"|"+norm(r.studentId),r);
+  data.sessions=Array.from(sessionMap.values());data.records=Array.from(recordMap.values());saveData();
+  showStatus("syncStatus","Sync complete. "+data.sessions.length+" sessions and "+data.records.length+" attendance records are available on this device and in the cloud.","good");
+ }catch(e){showStatus("syncStatus",e.message||"Sync failed. Local records are safe; retry when online and signed in.","bad")}
+ finally{button.disabled=false}
+}
+$("syncAttendance").addEventListener("click",syncAttendance);
 $("clearRecords").addEventListener("click",()=>{if(!confirm("Delete all saved sessions and attendance records from this device? Export a backup first. This cannot be undone."))return;data={sessions:[],records:[]};saveData();activeSession=null;$("sessionQr").innerHTML='<span class="muted">Your session QR will appear here.</span>';$("printSession").disabled=true;showStatus("sessionStatus","Local records cleared.")});
 window.addEventListener("online",renderStats);window.addEventListener("offline",renderStats);
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").then(()=>{}).catch(()=>{}))}
