@@ -59,7 +59,7 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 24px;color:var(--muted);font
 <div class="actions"><button id="startLecturerScan" type="button">Open camera scanner</button><button class="secondary" id="stopLecturerScan" type="button" disabled>Stop camera</button></div>
 <video id="lecturerVideo" class="camera hidden" playsinline muted></video><canvas id="lecturerCanvas" class="hidden"></canvas>
 <div id="lecturerScanStatus" class="status">Camera scanner is closed.</div>
-<div class="field"><label for="manualPayload">Camera not working? Paste QR text here</label><input id="manualPayload" placeholder="Paste the full QR payload"><button id="processManual" class="secondary" type="button">Process pasted QR</button></div>
+<div class="hidden"><div class="field"><label for="manualPayload">QR text</label><input id="manualPayload" placeholder="QR payload"><button id="processManual" class="secondary" type="button">Process QR</button></div></div>
 </div>
 <div class="panel">
 <h2>4. Export attendance</h2>
