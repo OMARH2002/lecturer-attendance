@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#173b66">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="/manifest.json">
+<title>Offline QR Attendance</title>
+<style>
+:root{--navy:#173b66;--blue:#2463a6;--ink:#152238;--muted:#627188;--line:#dce4ee;--bg:#f5f7fb;--white:#fff;--green:#137a52;--red:#b42318;--amber:#8a5b00}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{background:var(--navy);color:white;padding:20px max(18px,calc((100% - 980px)/2));box-shadow:0 4px 18px #102b4a22}
+header h1{font-size:1.35rem;margin:0 0 4px}header p{margin:0;color:#d7e5f5;font-size:.92rem}
+main{max-width:980px;margin:18px auto;padding:0 14px 36px}.notice{padding:12px 14px;border:1px solid #c5d7ee;background:#edf5ff;border-radius:12px;margin-bottom:14px;color:#234466;font-size:.92rem}
+.tabs{display:flex;gap:8px;margin:14px 0}.tab{flex:1;padding:12px 8px;border:1px solid var(--line);border-radius:10px;background:white;color:var(--navy);font-weight:700;cursor:pointer}.tab.active{background:var(--navy);color:white;border-color:var(--navy)}
+.panel{background:white;border:1px solid var(--line);border-radius:16px;padding:18px;margin:12px 0;box-shadow:0 4px 14px #183b6510}.panel h2{font-size:1.1rem;margin:0 0 12px}.panel h3{font-size:1rem;margin:16px 0 8px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.field{display:flex;flex-direction:column;gap:5px}.field.full{grid-column:1/-1}label{font-size:.88rem;font-weight:650;color:#34445c}input,select{width:100%;min-height:44px;border:1px solid #cbd5e1;border-radius:9px;padding:10px 11px;background:#fff;color:var(--ink);font:inherit}input[type=file]{padding:8px;font-size:.88rem}
+button,.button{border:0;border-radius:10px;padding:12px 15px;font:inherit;font-weight:700;cursor:pointer;background:var(--blue);color:#fff;min-height:44px}button.secondary{background:#e8eef6;color:var(--navy);border:1px solid #d5dfeb}button.danger{background:#fff0ef;color:var(--red);border:1px solid #ffd1cd}button:disabled{opacity:.5;cursor:not-allowed}.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}.muted{color:var(--muted);font-size:.9rem}.small{font-size:.82rem}.hidden{display:none!important}.pill{display:inline-block;padding:4px 9px;border-radius:999px;font-size:.78rem;font-weight:750;background:#e6f6ee;color:var(--green)}.pill.amber{background:#fff4d8;color:var(--amber)}
+.qrbox{display:flex;justify-content:center;align-items:center;min-height:230px;padding:14px;background:#fff;border:1px dashed #b9c8da;border-radius:12px;margin:12px 0}.qrbox canvas,.qrbox img{max-width:100%;height:auto!important}.camera{width:100%;max-height:55vh;object-fit:cover;background:#0c1728;border-radius:12px}.status{padding:11px 13px;border-radius:10px;margin:10px 0;background:#eef3f8;color:#34445c}.status.good{background:#e6f6ee;color:#126747}.status.bad{background:#fff0ef;color:#a31d16}.status.warn{background:#fff5dc;color:#805700}.stats{display:flex;gap:10px;flex-wrap:wrap}.stat{background:#f2f6fb;border-radius:10px;padding:10px 13px;min-width:110px}.stat strong{display:block;font-size:1.35rem;color:var(--navy)}.stat span{font-size:.8rem;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:.87rem}th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line)}th{background:#f4f7fb;color:#42516a} .tablewrap{overflow-x:auto}
+footer{max-width:980px;margin:0 auto;padding:0 18px 24px;color:var(--muted);font-size:.82rem}
+@media(max-width:620px){.grid{grid-template-columns:1fr}.panel{padding:14px}.field.full{grid-column:auto}header{padding:18px}.tab{font-size:.9rem}.actions button{flex:1}}
+</style>
+</head>
+<body>
+<header><h1>Offline QR Attendance</h1><p>Scan in person · Save on this device · Export to Excel</p></header>
+<main>
+<div class="notice"><strong>Offline-ready:</strong> Open this app once while online on each phone, then install it to the home screen. During attendance, no internet, Wi-Fi, Bluetooth, or NFC is used. QR scanning happens inside this app.</div>
+<div class="stats"><div class="stat"><strong id="networkState">Checking…</strong><span>Connection status</span></div><div class="stat"><strong id="attendanceTotal">0</strong><span>Records on this device</span></div><div class="stat"><strong id="rosterTotal">0</strong><span>Roster students loaded</span></div></div>
+<div class="tabs"><button class="tab active" id="lecturerTab" type="button">Lecturer</button><button class="tab" id="studentTab" type="button">Student</button></div>
+
+<section id="lecturerPanel">
+<div class="panel">
+<h2>1. Create a lecture session</h2>
+<p class="muted">The session QR is generated on this device. Show it on your screen or print it. Students scan it using the Student tab in this app.</p>
+<div class="grid">
+<div class="field"><label for="course">Course / subject</label><input id="course" placeholder="e.g. Business Information Systems"></div>
+<div class="field"><label for="department">Department</label><input id="department" placeholder="e.g. BIS"></div>
+<div class="field"><label for="group">Group / lecture time</label><input id="group" placeholder="e.g. Group 2 · 10:00"></div>
+<div class="field"><label for="duration">QR validity</label><select id="duration"><option value="60">1 hour</option><option value="120" selected>2 hours</option><option value="240">4 hours</option><option value="480">8 hours</option></select></div>
+</div>
+<div class="actions"><button id="createSession" type="button">Generate session QR</button><button class="secondary" id="printSession" type="button" disabled>Print QR</button></div>
+<div id="sessionStatus" class="status">No active session yet.</div>
+<div id="sessionQr" class="qrbox"><span class="muted">Your session QR will appear here.</span></div>
+</div>
+<div class="panel">
+<h2>2. Load your student roster (recommended)</h2>
+<p class="muted">Import a CSV exported from Excel. Use columns named <b>REG ID</b> and <b>NAME</b> (case-insensitive); optional DEPARTMENT. This stays on the lecturer's device. When loaded, scanned submissions are checked against the roster.</p>
+<div class="field"><label for="rosterFile">Roster CSV file</label><input id="rosterFile" type="file" accept=".csv,text/csv"></div>
+<div class="actions"><button id="loadRoster" type="button">Import roster</button><button class="secondary" id="clearRoster" type="button">Clear roster</button></div>
+<div id="rosterStatus" class="status">No roster imported. Without a roster, the app can only check duplicate IDs, not identity.</div>
+</div>
+<div class="panel">
+<h2>3. Scan student confirmation QR codes</h2>
+<p class="muted">After submitting, each student shows their confirmation QR. Scan it here. The lecturer's phone stores the attendance locally and rejects a second submission for the same student and session.</p>
+<div class="actions"><button id="startLecturerScan" type="button">Open camera scanner</button><button class="secondary" id="stopLecturerScan" type="button" disabled>Stop camera</button></div>
+<video id="lecturerVideo" class="camera hidden" playsinline muted></video><canvas id="lecturerCanvas" class="hidden"></canvas>
+<div id="lecturerScanStatus" class="status">Camera scanner is closed.</div>
+<div class="field"><label for="manualPayload">Camera not working? Paste QR text here</label><input id="manualPayload" placeholder="Paste the full QR payload"><button id="processManual" class="secondary" type="button">Process pasted QR</button></div>
+</div>
+<div class="panel">
+<h2>4. Export attendance</h2>
+<div class="stats"><div class="stat"><strong id="recordCount">0</strong><span>Attendance records</span></div><div class="stat"><strong id="sessionCount">0</strong><span>Sessions saved</span></div></div>
+<div class="actions"><button id="exportCsv" type="button">Export CSV for Excel</button><button class="secondary" id="exportBackup" type="button">Export backup JSON</button><button class="danger" id="clearRecords" type="button">Clear all local records</button></div>
+<p class="muted small">Export after each class. Records live only in this browser's local storage and can be lost if site data is cleared or the app is removed. Keep exported files safe.</p>
+<div class="tablewrap"><table><thead><tr><th>Student</th><th>REG ID</th><th>Session</th><th>Time</th><th>Check</th></tr></thead><tbody id="recordsTable"><tr><td colspan="5" class="muted">No attendance records yet.</td></tr></tbody></table></div>
+</div>
+</section>
+
+<section id="studentPanel" class="hidden">
+<div class="panel">
+<h2>1. Scan the lecturer's session QR</h2>
+<p class="muted">Use this scanner inside the app. The normal phone camera cannot open an offline page from a QR code with no internet.</p>
+<div class="actions"><button id="startStudentScan" type="button">Scan session QR</button><button class="secondary" id="stopStudentScan" type="button" disabled>Stop camera</button></div>
+<video id="studentVideo" class="camera hidden" playsinline muted></video><canvas id="studentCanvas" class="hidden"></canvas>
+<div id="studentScanStatus" class="status">No session scanned.</div>
+<div class="field"><label for="manualSession">Or paste session QR text</label><input id="manualSession" placeholder="Paste session QR payload"><button id="processSessionManual" class="secondary" type="button">Use pasted session</button></div>
+</div>
+<div class="panel">
+<h2>2. Enter your details</h2>
+<div id="activeSessionInfo" class="status warn">Scan a valid session QR first.</div>
+<form id="studentForm">
+<div class="grid">
+<div class="field full"><label for="studentName">Full name</label><input id="studentName" autocomplete="name" required maxlength="100" placeholder="Enter your name"></div>
+<div class="field"><label for="studentId">University REG ID</label><input id="studentId" required maxlength="40" autocomplete="off" placeholder="Enter your registration ID"></div>
+<div class="field"><label for="studentDepartment">Department</label><input id="studentDepartment" required maxlength="80" placeholder="Enter your department"></div>
+</div>
+<div class="actions"><button id="submitAttendance" type="submit" disabled>Generate attendance QR</button></div>
+</form>
+<div id="studentResult" class="status">Your attendance confirmation will appear here.</div>
+<div id="studentQr" class="qrbox"><span class="muted">No confirmation QR yet.</span></div>
+<button id="downloadStudentQr" class="secondary" type="button" disabled>Save confirmation QR image</button>
+<p class="muted small">After submission, this device blocks another submission for the same session. The lecturer's device also rejects duplicate REG IDs. This is a practical duplicate check, not proof of identity; a student could still type another person's ID unless the lecturer verifies it against the roster.</p>
+</div>
+</section>
+</main>
+<footer>Offline use requires an initial online visit and installation/cache on each device. The app does not upload student information to a server. Camera access requires permission and a secure HTTPS app origin.</footer>
+<script src="/qrcode.min.js"></script>
+<script src="/jsQR.js"></script>
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const STORE="offlineQRAttendance.v1";
+let data=loadData(), roster=[], activeSession=null, studentSession=null, stream=null, scanFrame=null, scanTarget=null, lastScanText="", lastScanAt=0, lastStudentQrCanvas=null;
+function loadData(){try{return JSON.parse(localStorage.getItem(STORE))||{sessions:[],records:[]}}catch(e){return {sessions:[],records:[]}}}
+function saveData(){localStorage.setItem(STORE,JSON.stringify(data));renderStats();renderRecords()}
+function uid(){return "S"+Date.now().toString(36).toUpperCase()+Math.random().toString(36).slice(2,7).toUpperCase()}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function norm(s){return String(s??"").trim().toLowerCase().replace(/\s+/g," ")}
+function showStatus(id,msg,type){const el=$(id);el.className="status"+(type?" "+type:"");el.textContent=msg}
+function renderStats(){$("attendanceTotal").textContent=data.records.length;$("recordCount").textContent=data.records.length;$("sessionCount").textContent=data.sessions.length;$("rosterTotal").textContent=roster.length;$("networkState").textContent=navigator.onLine?"Online setup":"Offline ready";$("networkState").style.color=navigator.onLine?"#2463a6":"#137a52"}
+function qr(target,payload,size=250){target.innerHTML="";new QRCode(target,{text:JSON.stringify(payload),width:size,height:size,colorDark:"#10243c",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M});return target.querySelector("canvas")||target.querySelector("img")}
+function parsePayload(text){try{return JSON.parse(text)}catch(e){return null}}
+function renderRecords(){
+ const body=$("recordsTable");if(!data.records.length){body.innerHTML='<tr><td colspan="5" class="muted">No attendance records yet.</td></tr>';return}
+ body.innerHTML=data.records.slice().reverse().slice(0,100).map(r=>'<tr><td>'+esc(r.name)+'</td><td>'+esc(r.studentId)+'</td><td>'+esc(r.course)+' · '+esc(r.group)+'</td><td>'+esc(new Date(r.submittedAt).toLocaleString())+'</td><td>'+esc(r.validation)+'</td></tr>').join("");
+}
+function setMode(mode){const isL=mode==="lecturer";$("lecturerPanel").classList.toggle("hidden",!isL);$("studentPanel").classList.toggle("hidden",isL);$("lecturerTab").classList.toggle("active",isL);$("studentTab").classList.toggle("active",!isL);stopCamera()}
+$("lecturerTab").addEventListener("click",()=>setMode("lecturer"));$("studentTab").addEventListener("click",()=>setMode("student"));
+$("createSession").addEventListener("click",()=>{
+ const course=$("course").value.trim(),department=$("department").value.trim(),group=$("group").value.trim();
+ if(!course||!department||!group){showStatus("sessionStatus","Enter the course, department, and group / lecture time first.","warn");return}
+ const now=Date.now();activeSession={type:"offline-attendance-session",sessionId:uid(),course,department,group,createdAt:now,expiresAt:now+Number($("duration").value)*60000};
+ data.sessions.push(activeSession);saveData();qr($("sessionQr"),activeSession,280);$("printSession").disabled=false;
+ showStatus("sessionStatus","Session QR ready. Expires at "+new Date(activeSession.expiresAt).toLocaleTimeString()+". Keep this session open while scanning students.","good");
+});
+$("printSession").addEventListener("click",()=>{if(!activeSession)return;const w=window.open("","_blank","width=500,height=650");if(!w){showStatus("sessionStatus","Allow pop-ups to print the QR, or take a screenshot.","warn");return}w.document.write('<html><head><title>Attendance QR</title></head><body style="font-family:Arial;text-align:center;padding:24px"><h2>'+esc(activeSession.course)+'</h2><p>'+esc(activeSession.department)+' · '+esc(activeSession.group)+'</p><div id="q"></div><p>Expires: '+new Date(activeSession.expiresAt).toLocaleString()+'</p></body></html>');w.document.close();setTimeout(()=>{const im=$("sessionQr").querySelector("img"),can=$("sessionQr").querySelector("canvas");const src=im?im.src:(can?can.toDataURL():"");const q=w.document.getElementById("q");q.innerHTML='<img style="width:280px;height:280px" src="'+src+'">';w.print()},300)});
+function csvParse(text){
+ const rows=[];let row=[],field="",quoted=false;
+ for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'&&quoted&&text[i+1]==='"'){field+='"';i++}else if(c==='"'){quoted=!quoted}else if(c===","&&!quoted){row.push(field);field=""}else if((c==="\n"||c==="\r")&&!quoted){if(c==="\r"&&text[i+1]==="\n")i++;row.push(field);if(row.some(x=>x.trim()))rows.push(row);row=[];field=""}else field+=c}
+ if(field.length||row.length){row.push(field);if(row.some(x=>x.trim()))rows.push(row)}return rows
+}
+$("loadRoster").addEventListener("click",async()=>{
+ const file=$("rosterFile").files[0];if(!file){showStatus("rosterStatus","Choose a CSV file exported from Excel.","warn");return}
+ try{const rows=csvParse(await file.text());if(rows.length<2)throw Error("The CSV needs a header row and at least one student.");const headers=rows[0].map(norm);const idI=headers.findIndex(h=>["reg id","regid","registration id","student id","id"].includes(h));const nameI=headers.findIndex(h=>["name","student name","full name"].includes(h));const deptI=headers.findIndex(h=>["department","dept"].includes(h));if(idI<0||nameI<0)throw Error("Could not find NAME and REG ID headers. Rename the columns to NAME and REG ID, then export CSV again.");roster=rows.slice(1).map(r=>({studentId:String(r[idI]||"").trim(),name:String(r[nameI]||"").trim(),department:deptI>=0?String(r[deptI]||"").trim():""})).filter(s=>s.studentId&&s.name);showStatus("rosterStatus","Loaded "+roster.length+" students. Submissions will be checked against REG ID and name.","good");renderStats()}catch(e){showStatus("rosterStatus",e.message||"Could not read that CSV.","bad")}
+});
+$("clearRoster").addEventListener("click",()=>{roster=[];$("rosterFile").value="";showStatus("rosterStatus","Roster cleared. Without a roster, the app checks duplicate IDs only.","warn");renderStats()});
+async function startCamera(targetName,canvasName,statusId){
+ await stopCamera();if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){showStatus(statusId,"Camera scanning is not supported in this browser. Use the paste field or another HTTPS browser.","bad");return}
+ try{stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}}});scanTarget={video:$(targetName),canvas:$(canvasName),statusId};scanTarget.video.srcObject=stream;scanTarget.video.classList.remove("hidden");await scanTarget.video.play();$(targetName.replace("Video","") );showStatus(statusId,"Camera active. Hold a QR code steady in front of the camera.","good");const ctx=scanTarget.canvas.getContext("2d",{willReadFrequently:true});const tick=()=>{if(!stream||!scanTarget)return;const v=scanTarget.video;if(v.readyState>=2&&v.videoWidth){scanTarget.canvas.width=v.videoWidth;scanTarget.canvas.height=v.videoHeight;ctx.drawImage(v,0,0,v.videoWidth,v.videoHeight);const image=ctx.getImageData(0,0,v.videoWidth,v.videoHeight);const found=jsQR(image.data,image.width,image.height,{inversionAttempts:"attemptBoth"});if(found&&found.data){const now=Date.now();if(found.data!==lastScanText||now-lastScanAt>2500){lastScanText=found.data;lastScanAt=now;handleScanned(found.data,statusId)}}}scanFrame=requestAnimationFrame(tick)};tick();return true}catch(e){showStatus(statusId,"Cannot open camera: "+(e.message||"permission denied")+". Allow camera access, or use the paste field.","bad");stopCamera();return false}
+}
+function stopCamera(){if(scanFrame)cancelAnimationFrame(scanFrame);scanFrame=null;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}if(scanTarget){scanTarget.video.pause();scanTarget.video.srcObject=null;scanTarget.video.classList.add("hidden");scanTarget=null}["lecturerCanvas","studentCanvas"].forEach(id=>$(id).classList.add("hidden"));$("stopLecturerScan").disabled=true;$("stopStudentScan").disabled=true}
+$("startLecturerScan").addEventListener("click",async()=>{const ok=await startCamera("lecturerVideo","lecturerCanvas","lecturerScanStatus");$("stopLecturerScan").disabled=!ok});
+$("stopLecturerScan").addEventListener("click",()=>{stopCamera();showStatus("lecturerScanStatus","Camera scanner is closed.")});
+$("startStudentScan").addEventListener("click",async()=>{const ok=await startCamera("studentVideo","studentCanvas","studentScanStatus");$("stopStudentScan").disabled=!ok});
+$("stopStudentScan").addEventListener("click",()=>{stopCamera();showStatus("studentScanStatus","Camera scanner is closed.")});
+function handleScanned(text,statusId){const p=parsePayload(text);if(!p){showStatus(statusId,"QR read, but its content is not a valid attendance code.","bad");return}if(statusId==="studentScanStatus"){if(p.type!=="offline-attendance-session"){showStatus(statusId,"This is not a lecturer session QR. Ask the lecturer to show the session QR.","bad");return}useStudentSession(p);stopCamera();return}if(p.type!=="offline-attendance-submission"){showStatus(statusId,"This is not a student confirmation QR. Scan the QR shown after the student submits.","bad");return}acceptAttendance(p)}
+function useStudentSession(s){if(!s.sessionId||!s.course||!s.department||!s.group){showStatus("studentScanStatus","The session QR is incomplete.","bad");return}if(Date.now()>Number(s.expiresAt)){showStatus("studentScanStatus","This session QR has expired. Ask the lecturer to generate a new one.","bad");return}studentSession=s;$("activeSessionInfo").className="status good";$("activeSessionInfo").textContent=s.course+" · "+s.department+" · "+s.group+" · valid until "+new Date(s.expiresAt).toLocaleTimeString();$("studentDepartment").value=s.department;$("submitAttendance").disabled=false;showStatus("studentScanStatus","Session accepted. Complete the form below.","good")}
+$("processSessionManual").addEventListener("click",()=>{const p=parsePayload($("manualSession").value.trim());if(!p||p.type!=="offline-attendance-session"){showStatus("studentScanStatus","That text is not a valid session QR payload.","bad");return}useStudentSession(p)});
+$("studentForm").addEventListener("submit",e=>{e.preventDefault();if(!studentSession){showStatus("studentResult","Scan the lecturer's session QR first.","warn");return}if(Date.now()>Number(studentSession.expiresAt)){showStatus("studentResult","This session has expired. Ask the lecturer for a new QR.","bad");return}const name=$("studentName").value.trim(),studentId=$("studentId").value.trim(),department=$("studentDepartment").value.trim();if(!name||!studentId||!department)return;const key="offlineQRSubmitted:"+studentSession.sessionId;let ids=[];try{ids=JSON.parse(localStorage.getItem(key)||"[]")}catch(e){}if(ids.map(norm).includes(norm(studentId))){showStatus("studentResult","This REG ID has already submitted on this device for this session.","bad");return}const payload={type:"offline-attendance-submission",sessionId:studentSession.sessionId,course:studentSession.course,sessionDepartment:studentSession.department,group:studentSession.group,name,studentId,department,submittedAt:Date.now(),nonce:uid()};ids.push(studentId);localStorage.setItem(key,JSON.stringify(ids));const canvas=qr($("studentQr"),payload,270);lastStudentQrCanvas=canvas;showStatus("studentResult","Confirmation QR generated. Show this QR to the lecturer for scanning. Your phone has marked this REG ID as submitted for this session.","good");$("downloadStudentQr").disabled=false});
+$("downloadStudentQr").addEventListener("click",()=>{const box=$("studentQr"),img=box.querySelector("img"),canvas=box.querySelector("canvas");let url=img?img.src:(canvas?canvas.toDataURL("image/png"):"");if(!url)return;const a=document.createElement("a");a.href=url;a.download="attendance-confirmation.png";a.click()});
+function acceptAttendance(p){
+ if(!activeSession){showStatus("lecturerScanStatus","Create a session on this device first. The student's QR cannot be matched without an active session.","warn");return}
+ if(Date.now()>Number(activeSession.expiresAt)){showStatus("lecturerScanStatus","The active session has expired. Generate a new session QR.","bad");return}
+ if(p.sessionId!==activeSession.sessionId){showStatus("lecturerScanStatus","Wrong session. This student QR belongs to a different lecture/group.","bad");return}
+ const studentId=String(p.studentId||"").trim(),name=String(p.name||"").trim();if(!studentId||!name){showStatus("lecturerScanStatus","Student QR is missing a name or REG ID.","bad");return}
+ if(data.records.some(r=>r.sessionId===p.sessionId&&norm(r.studentId)===norm(studentId))){showStatus("lecturerScanStatus","DUPLICATE REJECTED: "+name+" ("+studentId+") is already recorded for this session.","bad");return}
+ let validation="ID duplicate-check only";
+ if(roster.length){const match=roster.find(s=>norm(s.studentId)===norm(studentId));if(!match){showStatus("lecturerScanStatus","REJECTED: REG ID "+studentId+" is not in the imported roster.","bad");return}if(norm(match.name)!==norm(name)){showStatus("lecturerScanStatus","REJECTED: name does not match the roster for REG ID "+studentId+". Roster name: "+match.name,"bad");return}if(match.department&&norm(match.department)!==norm(p.department)){showStatus("lecturerScanStatus","REJECTED: department does not match the roster for "+studentId+".","bad");return}validation="Roster verified"}
+ const rec={sessionId:p.sessionId,course:p.course||activeSession.course,department:p.sessionDepartment||activeSession.department,group:p.group||activeSession.group,name,studentId,studentDepartment:p.department||"",submittedAt:Number(p.submittedAt)||Date.now(),scannedAt:Date.now(),validation};data.records.push(rec);saveData();showStatus("lecturerScanStatus","ATTENDANCE SAVED: "+name+" ("+studentId+"). "+validation+". Total records: "+data.records.length,"good")
+}
+$("processManual").addEventListener("click",()=>{const text=$("manualPayload").value.trim();if(!text){showStatus("lecturerScanStatus","Paste the QR payload first.","warn");return}handleScanned(text,"lecturerScanStatus")});
+function downloadBlob(content,type,filename){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+function csvCell(v){return '"'+String(v??"").replace(/"/g,'""')+'"'}
+$("exportCsv").addEventListener("click",()=>{if(!data.records.length){alert("There are no attendance records to export yet.");return}const rows=[["COURSE","DEPARTMENT","GROUP","STUDENT NAME","REG ID","STUDENT DEPARTMENT","SUBMITTED AT","SCANNED AT","VALIDATION","SESSION ID"],...data.records.map(r=>[r.course,r.department,r.group,r.name,r.studentId,r.studentDepartment,new Date(r.submittedAt).toISOString(),new Date(r.scannedAt).toISOString(),r.validation,r.sessionId])];downloadBlob("\ufeff"+rows.map(r=>r.map(csvCell).join(",")).join("\r\n"),"text/csv;charset=utf-8","offline-attendance-"+new Date().toISOString().slice(0,10)+".csv")});
+$("exportBackup").addEventListener("click",()=>downloadBlob(JSON.stringify({exportedAt:new Date().toISOString(),sessions:data.sessions,records:data.records},null,2),"application/json","offline-attendance-backup.json"));
+$("clearRecords").addEventListener("click",()=>{if(!confirm("Delete all saved sessions and attendance records from this device? Export a backup first. This cannot be undone."))return;data={sessions:[],records:[]};saveData();activeSession=null;$("sessionQr").innerHTML='<span class="muted">Your session QR will appear here.</span>';$("printSession").disabled=true;showStatus("sessionStatus","Local records cleared.")});
+window.addEventListener("online",renderStats);window.addEventListener("offline",renderStats);
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").then(()=>{}).catch(()=>{}))}
+renderStats();renderRecords();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "Offline QR Attendance",
+  "short_name": "QR Attendance",
+  "description": "Offline-first QR attendance with local records and CSV export.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#173b66",
+  "orientation": "portrait",
+  "icons": []
+}
