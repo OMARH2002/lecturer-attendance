@@ -68,15 +68,7 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 24px;color:var(--muted);font
 <p class="muted small">Export after each class. Records live only in this browser's local storage and can be lost if site data is cleared or the app is removed. Keep exported files safe.</p>
 <div class="tablewrap"><table><thead><tr><th>Student</th><th>REG ID</th><th>Session</th><th>Time</th><th>Check</th></tr></thead><tbody id="recordsTable"><tr><td colspan="5" class="muted">No attendance records yet.</td></tr></tbody></table></div>
 </div>
-<div class="panel">
-<h2>3. Bluetooth Offline Receiver</h2>
-<p class="muted">Connect the laptop dashboard to the local BLE receiver app running on this computer. The receiver scans for nearby student apps and sends verified attendance payloads to this page. The browser itself cannot scan BLE advertisements.</p>
-<div class="stats"><div class="stat"><strong id="bleBridgeState">Not connected</strong><span>Desktop BLE bridge</span></div><div class="stat"><strong id="bleReceivedCount">0</strong><span>Records saved</span></div></div>
-<div class="actions"><button id="connectBleBridge" type="button">Connect to laptop receiver</button><button class="secondary" id="disconnectBleBridge" type="button" disabled>Disconnect</button></div>
-<div id="bleBridgeStatus" class="status warn">Start the Rashid BLE Receiver on this laptop, then connect here. The local receiver listens at ws://127.0.0.1:8765/attendance.</div>
-<div id="lecturerScanStatus" class="status">Waiting for BLE attendance.</div>
-<p class="muted small">Attendance is saved in this browser's local storage. Keep the dashboard open while the receiver is active. This browser connection does not work until the separate native desktop receiver is installed and running.</p>
-</div>
+<!-- Bluetooth receiver removed: QR attendance only. -->
 </section>
 
 <section id="studentPanel" class="hidden">
@@ -134,7 +126,7 @@ $("createSession").addEventListener("click",()=>{
  const course=$("course").value.trim(),department=$("department").value.trim(),group=$("group").value.trim();
  if(!course||!department||!group){showStatus("sessionStatus","Enter the course, department, and group / lecture time first.","warn");return}
  const now=Date.now();activeSession={type:"offline-attendance-session",sessionId:uid(),course,department,group,createdAt:now,expiresAt:now+Number($("duration").value)*60000};
- data.sessions.push(activeSession);saveData();if(bleSocket&&bleSocket.readyState===WebSocket.OPEN)bleSocket.send(JSON.stringify({type:"set_session",sessionId:activeSession.sessionId}));qr($("sessionQr"),activeSession,280);$("printSession").disabled=false;
+ data.sessions.push(activeSession);saveData();qr($("sessionQr"),activeSession,280);$("printSession").disabled=false;
  showStatus("sessionStatus","Session QR ready. Expires at "+new Date(activeSession.expiresAt).toLocaleTimeString()+". Keep this session open while scanning students.","good");
 });
 $("printSession").addEventListener("click",()=>{if(!activeSession)return;const w=window.open("","_blank","width=500,height=650");if(!w){showStatus("sessionStatus","Allow pop-ups to print the QR, or take a screenshot.","warn");return}w.document.write('<html><head><title>Attendance QR</title></head><body style="font-family:Arial;text-align:center;padding:24px"><h2>'+esc(activeSession.course)+'</h2><p>'+esc(activeSession.department)+' · '+esc(activeSession.group)+'</p><div id="q"></div><p>Expires: '+new Date(activeSession.expiresAt).toLocaleString()+'</p></body></html>');w.document.close();setTimeout(()=>{const im=$("sessionQr").querySelector("img"),can=$("sessionQr").querySelector("canvas");const src=im?im.src:(can?can.toDataURL():"");const q=w.document.getElementById("q");q.innerHTML='<img style="width:280px;height:280px" src="'+src+'">';w.print()},300)});
@@ -176,26 +168,7 @@ function acceptAttendance(p){
  const rec={sessionId:p.sessionId,course:p.course||activeSession.course,department:p.sessionDepartment||activeSession.department,group:p.group||activeSession.group,name,studentId,studentDepartment:p.department||"",deviceToken:p.deviceToken||"",submittedAt:Number(p.submittedAt)||Date.now(),scannedAt:Date.now(),validation};data.records.push(rec);saveData();showStatus("lecturerScanStatus","ATTENDANCE SAVED: "+name+" ("+studentId+"). "+validation+". Total records: "+data.records.length,"good")
 }
 $("processManual").addEventListener("click",()=>{const text=$("manualPayload").value.trim();if(!text){showStatus("lecturerScanStatus","Paste the QR payload first.","warn");return}handleScanned(text,"lecturerScanStatus")});
-let bleSocket=null;
-function connectBleBridge(){
- if(bleSocket&&bleSocket.readyState===WebSocket.OPEN){showStatus("bleBridgeStatus","Already connected to the laptop BLE receiver.","good");return}
- showStatus("bleBridgeStatus","Connecting to the local BLE receiver at 127.0.0.1:8765…","warn");
- try{
-  bleSocket=new WebSocket("ws://127.0.0.1:8765/attendance");
-  bleSocket.addEventListener("open",()=>{$("bleBridgeState").textContent="Connected";$("connectBleBridge").disabled=true;$("disconnectBleBridge").disabled=false;showStatus("bleBridgeStatus","Connected. The desktop bridge should now scan for student BLE devices.","good");bleSocket.send(JSON.stringify({type:"start_scan",sessionId:activeSession?activeSession.sessionId:null}))});
-  bleSocket.addEventListener("message",event=>{let msg;try{msg=JSON.parse(event.data)}catch(e){showStatus("bleBridgeStatus","Receiver sent invalid JSON.","bad");return}
-   if(msg.type==="status"){showStatus("bleBridgeStatus",String(msg.message||"BLE receiver status"),msg.level||"warn");return}
-   if(msg.type==="attendance"&&msg.payload){const p=msg.payload;if(!p.type)p.type="offline-attendance-submission";acceptAttendance(p);$("bleReceivedCount").textContent=data.records.length;const s=$("lecturerScanStatus");showStatus("bleBridgeStatus",s.textContent||"BLE event received.",s.classList.contains("good")?"good":s.classList.contains("bad")?"bad":"warn");return}
-   if(msg.type==="device_seen"){showStatus("bleBridgeStatus","Student BLE device detected. Verifying attendance credential…","warn")}
-  });
-  bleSocket.addEventListener("error",()=>{showStatus("bleBridgeStatus","Cannot reach the local BLE receiver. Start the desktop bridge and allow local connections, then retry.","bad")});
-  bleSocket.addEventListener("close",()=>{$("bleBridgeState").textContent="Not connected";$("connectBleBridge").disabled=false;$("disconnectBleBridge").disabled=true;bleSocket=null});
- }catch(e){showStatus("bleBridgeStatus","Could not connect to the local BLE receiver: "+(e.message||"connection failed"),"bad")}
-}
-function disconnectBleBridge(){if(bleSocket){try{bleSocket.send(JSON.stringify({type:"stop_scan"}))}catch(e){}bleSocket.close();bleSocket=null}$("bleBridgeState").textContent="Not connected";$("connectBleBridge").disabled=false;$("disconnectBleBridge").disabled=true;showStatus("bleBridgeStatus","Disconnected from the laptop BLE receiver.")}
-$("connectBleBridge").addEventListener("click",connectBleBridge);
-$("disconnectBleBridge").addEventListener("click",disconnectBleBridge);
-window.addEventListener("beforeunload",disconnectBleBridge);
+// QR-only attendance: no Bluetooth receiver or audio feature is used.
 function downloadBlob(content,type,filename){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function csvCell(v){return '"'+String(v??"").replace(/"/g,'""')+'"'}
 $("exportCsv").addEventListener("click",()=>{if(!data.records.length){alert("There are no attendance records to export yet.");return}const rows=[["COURSE","DEPARTMENT","GROUP","STUDENT NAME","REG ID","STUDENT DEPARTMENT","SUBMITTED AT","SCANNED AT","VALIDATION","SESSION ID"],...data.records.map(r=>[r.course,r.department,r.group,r.name,r.studentId,r.studentDepartment,new Date(r.submittedAt).toISOString(),new Date(r.scannedAt).toISOString(),r.validation,r.sessionId])];downloadBlob("\ufeff"+rows.map(r=>r.map(csvCell).join(",")).join("\r\n"),"text/csv;charset=utf-8","offline-attendance-"+new Date().toISOString().slice(0,10)+".csv")});
