@@ -68,7 +68,25 @@ const T={
 "Generate attendance QR":"إنشاء رمز الحضور",
 "Save confirmation QR image":"حفظ صورة رمز التأكيد",
 "Online setup":"إعداد عبر الإنترنت",
-"Offline ready":"جاهز دون اتصال"
+"Offline ready":"جاهز دون اتصال",
+"Scan your lecture QR and show your confirmation":"امسح رمز المحاضرة واعرض تأكيدك",
+"Use this scanner inside the app, not the phone's normal camera. The QR identifies your subject, group, and session.":"استخدم الماسح داخل التطبيق وليس كاميرا الهاتف العادية. يحدد الرمز المادة والمجموعة والجلسة.",
+"Show this QR to your lecturer. The lecturer scans it and records your attendance on their device. A second submission with the same ID is blocked on this phone, and the lecturer's device rejects duplicate IDs for the same session.":"اعرض هذا الرمز على المحاضر ليقوم بمسحه وتسجيل حضورك على جهازه. يمنع هذا الهاتف الإرسال المتكرر بنفس الرقم، ويرفض جهاز المحاضر تكرار الرقم في الجلسة نفسها.",
+"For identity checking, the lecturer should compare your name and REG ID against the official class roster. A QR code alone cannot prove who is holding the phone.":"للتحقق من الهوية، يجب على المحاضر مقارنة الاسم ورقم القيد بكشف الطلاب الرسمي. لا يثبت رمز QR وحده هوية حامل الهاتف.",
+"The session QR is generated on this device. Show it on your screen. Students scan it using the separate Student Attendance website.":"يُنشأ رمز الجلسة على هذا الجهاز. اعرضه على الشاشة ليمسحه الطلاب باستخدام موقع حضور الطلاب المنفصل.",
+"Import a CSV exported from Excel. Use columns named REG ID and NAME (case-insensitive); optional DEPARTMENT. This stays on the lecturer's device. When loaded, scanned submissions are checked against the roster.":"استورد ملف CSV مُصدّراً من Excel. استخدم عمودي REG ID وNAME، ويمكن إضافة DEPARTMENT. يبقى الملف على جهاز المحاضر، وتُراجع البيانات بمقارنتها بالكشف.",
+"No roster imported. Without a roster, the app can only check duplicate IDs, not identity.":"لم يتم استيراد كشف. من دونه يستطيع التطبيق فحص تكرار أرقام القيد فقط وليس الهوية.",
+"After submitting, each student shows their confirmation QR. Scan it here. The lecturer's phone stores the attendance locally and rejects a second submission for the same student and session.":"بعد الإرسال، يعرض كل طالب رمز التأكيد. امسحه هنا. يحفظ هاتف المحاضر الحضور محلياً ويرفض التسجيل المكرر للطالب نفسه في الجلسة نفسها.",
+"Attendance is saved automatically on this device and remains available after closing and reopening the site, unless browser/site data is cleared or the app is removed. Choose a date to view that day's records or export that day separately.":"يُحفظ الحضور تلقائياً على هذا الجهاز ويظل متاحاً بعد إغلاق الموقع وفتحه، ما لم تُمسح بيانات المتصفح أو يُحذف التطبيق. اختر تاريخاً لعرض سجلاته أو تصديرها منفصلة.",
+"Use this scanner inside the app. The normal phone camera cannot open an offline page from a QR code with no internet.":"استخدم الماسح داخل التطبيق. لا تستطيع كاميرا الهاتف العادية فتح صفحة دون اتصال من رمز QR لا يحتوي على رابط إنترنت.",
+"Offline use requires an initial online visit and installation/cache on each device. The app does not upload student information to a server. Camera access requires permission and a secure HTTPS app origin.":"يتطلب الاستخدام دون اتصال زيارة أولى عبر الإنترنت وتثبيت التطبيق أو تخزينه مؤقتاً على كل جهاز. لا يرفع التطبيق بيانات الطلاب إلى خادم. يتطلب الوصول إلى الكاميرا الإذن واتصال HTTPS آمناً.",
+"Scan a valid lecturer QR first.":"امسح رمز المحاضر الصحيح أولاً.",
+"Session accepted. Complete your details below.":"تم قبول الجلسة. أكمل بياناتك أدناه.",
+"Camera active. Hold a QR code steady in front of the camera.":"الكاميرا تعمل. ثبّت رمز QR أمام الكاميرا.",
+"Camera scanner is closed.":"ماسح الكاميرا مغلق.",
+"Open the site once while connected to the internet so the app and scanner files can load.":"افتح الموقع مرة واحدة أثناء الاتصال بالإنترنت لتحميل التطبيق وملفات الماسح.",
+"Enter the course, department, and group / lecture time first.":"أدخل المقرر والقسم والمجموعة / موعد المحاضرة أولاً.",
+"Choose a date to view that day's records or export that day separately.":"اختر تاريخاً لعرض سجلات ذلك اليوم أو تصديرها بشكل منفصل."
 };
 let lang="en";try{lang=localStorage.getItem("attendanceLanguage")||"en"}catch(e){}
 let queued=false;
