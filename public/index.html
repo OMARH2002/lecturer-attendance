@@ -42,7 +42,7 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 24px;color:var(--muted);font
 <div class="field"><label for="group">Group / lecture time</label><input id="group" placeholder="e.g. Group 2 · 10:00"></div>
 <div class="field"><label for="duration">QR validity</label><select id="duration"><option value="60">1 hour</option><option value="120" selected>2 hours</option><option value="240">4 hours</option><option value="480">8 hours</option></select></div>
 </div>
-<div class="actions"><button id="createSession" type="button">Generate session QR</button><button class="secondary" id="printSession" type="button" disabled>Print QR</button></div>
+<div class="actions"><button id="createSession" type="button">Generate session QR</button><button class="secondary" id="printSession" type="button" disabled>Print QR</button><button class="danger" id="cancelSession" type="button" disabled>Cancel session QR</button></div>
 <div id="sessionStatus" class="status">No active session yet.</div>
 <div id="sessionQr" class="qrbox"><span class="muted">Your session QR will appear here.</span></div>
 </div>
@@ -127,9 +127,10 @@ $("createSession").addEventListener("click",()=>{
  const course=$("course").value.trim(),department=$("department").value.trim(),group=$("group").value.trim();
  if(!course||!department||!group){showStatus("sessionStatus","Enter the course, department, and group / lecture time first.","warn");return}
  const now=Date.now();activeSession={type:"offline-attendance-session",sessionId:uid(),course,department,group,createdAt:now,expiresAt:now+Number($("duration").value)*60000};
- data.sessions.push(activeSession);saveData();refreshSessionQr();if(sessionQrTimer)clearInterval(sessionQrTimer);sessionQrTimer=setInterval(refreshSessionQr,1000);$("printSession").disabled=true;
+ data.sessions.push(activeSession);saveData();refreshSessionQr();if(sessionQrTimer)clearInterval(sessionQrTimer);sessionQrTimer=setInterval(refreshSessionQr,1000);$("printSession").disabled=true;$("cancelSession").disabled=false;
  showStatus("sessionStatus","Session QR ready. Expires at "+new Date(activeSession.expiresAt).toLocaleTimeString()+". Keep this session open while scanning students.","good");
 });
+$("cancelSession").addEventListener("click",()=>{if(!activeSession){showStatus("sessionStatus","There is no active session to cancel.","warn");return}const cancelledId=activeSession.sessionId;activeSession=null;if(sessionQrTimer){clearInterval(sessionQrTimer);sessionQrTimer=null}$("sessionQr").innerHTML='<span class="muted">Session QR cancelled. Generate a new session to continue.</span>';$("printSession").disabled=true;$("cancelSession").disabled=true;showStatus("sessionStatus","SESSION CANCELLED. This lecturer device will reject confirmations for the cancelled session. Generate a new session QR when ready.","bad");showStatus("lecturerScanStatus","The active session was cancelled. Create a new session before scanning any more students.","warn")});
 $("printSession").addEventListener("click",()=>{if(!activeSession)return;const w=window.open("","_blank","width=500,height=650");if(!w){showStatus("sessionStatus","Allow pop-ups to print the QR, or take a screenshot.","warn");return}w.document.write('<html><head><title>Attendance QR</title></head><body style="font-family:Arial;text-align:center;padding:24px"><h2>'+esc(activeSession.course)+'</h2><p>'+esc(activeSession.department)+' · '+esc(activeSession.group)+'</p><div id="q"></div><p>Expires: '+new Date(activeSession.expiresAt).toLocaleString()+'</p></body></html>');w.document.close();setTimeout(()=>{const im=$("sessionQr").querySelector("img"),can=$("sessionQr").querySelector("canvas");const src=im?im.src:(can?can.toDataURL():"");const q=w.document.getElementById("q");q.innerHTML='<img style="width:280px;height:280px" src="'+src+'">';w.print()},300)});
 function csvParse(text){
  const rows=[];let row=[],field="",quoted=false;
