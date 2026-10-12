@@ -1,4 +1,4 @@
-const CACHE = "offline-qr-attendance-v3";
+const CACHE = "offline-qr-attendance-v4";
 const ASSETS = ["/", "/index.html", "/manifest.json", "/qrcode.min.js", "/jsQR.js"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
