@@ -271,7 +271,11 @@ const T={
 "Loaded ":"تم تحميل ",
 " students. Submissions will be checked against REG ID and name.":" طالباً. سيتم التحقق من رقم القيد والاسم عند الإرسال.",
 "Roster cleared. Without a roster, the app checks duplicate IDs only.":"تم مسح الكشف. دون كشف، يتحقق التطبيق من تكرار أرقام القيد فقط.",
-"Choose a date to view that day's records or export that day separately.":"اختر تاريخاً لعرض سجلات ذلك اليوم أو تصديرها بشكل منفصل."
+"Choose a date to view that day's records or export that day separately.":"اختر تاريخاً لعرض سجلات ذلك اليوم أو تصديرها بشكل منفصل.",
+"Session QR is available locally, but online cancellation checks could not be registered. Reconnect and generate a new session before relying on automatic cancellation notices.":"رمز الجلسة متاح محلياً، لكن تعذر تسجيله للتحقق من الإلغاء عبر الإنترنت. أعد الاتصال وأنشئ جلسة جديدة قبل الاعتماد على إشعارات الإلغاء التلقائية.",
+"SESSION CANCELLED LOCALLY ONLY. No internet connection, so students will not receive the automatic cancellation status. Show them the cancellation notice QR.":"تم إلغاء الجلسة محلياً فقط. لا يوجد اتصال بالإنترنت، لذلك لن يتلقى الطلاب حالة الإلغاء تلقائياً. اعرض عليهم رمز إشعار الإلغاء.",
+"SESSION CANCELLED LOCALLY, BUT THE ONLINE STATUS COULD NOT BE UPDATED. Keep the cancellation notice visible and check the connection.":"تم إلغاء الجلسة محلياً، لكن تعذر تحديث الحالة عبر الإنترنت. أبقِ رمز إشعار الإلغاء ظاهراً وتحقق من الاتصال.",
+"SESSION CANCELLED. Students who check online before generating their confirmation QR will be told to scan a new session QR.":"تم إلغاء الجلسة. سيُطلب من الطلاب المتصلين بالإنترنت مسح رمز جلسة جديد قبل إنشاء رمز التأكيد."
 };
 let lang="en";try{lang=localStorage.getItem("attendanceLanguage")||"en"}catch(e){}
 let queued=false;
