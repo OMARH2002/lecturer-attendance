@@ -64,8 +64,9 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 24px;color:var(--muted);font
 <div class="panel">
 <h2>4. Export attendance</h2>
 <div class="stats"><div class="stat"><strong id="recordCount">0</strong><span>Attendance records</span></div><div class="stat"><strong id="sessionCount">0</strong><span>Sessions saved</span></div></div>
-<div class="actions"><button id="exportCsv" type="button">Export CSV for Excel</button><button class="secondary" id="exportBackup" type="button">Export backup JSON</button><button class="danger" id="clearRecords" type="button">Clear all local records</button></div>
-<p class="muted small">Export after each class. Records live only in this browser's local storage and can be lost if site data is cleared or the app is removed. Keep exported files safe.</p>
+<div class="grid" style="margin:12px 0"><div class="field"><label for="attendanceDate">Attendance date to view / export</label><input id="attendanceDate" type="date"></div><div class="field"><label>Selected day</label><div class="status" id="daySummary" style="margin:0">0 records for this day</div></div></div>
+<div class="actions"><button id="exportCsv" type="button">Export selected day CSV</button><button id="exportAllCsv" class="secondary" type="button">Export all days CSV</button><button class="secondary" id="exportBackup" type="button">Export backup JSON</button><button class="danger" id="clearRecords" type="button">Clear all local records</button></div>
+<p class="muted small">Attendance is saved automatically on this device and remains available after closing and reopening the site, unless browser/site data is cleared or the app is removed. Choose a date to view that day's records or export that day separately.</p>
 <div class="tablewrap"><table><thead><tr><th>Student</th><th>REG ID</th><th>Session</th><th>Time</th><th>Check</th></tr></thead><tbody id="recordsTable"><tr><td colspan="5" class="muted">No attendance records yet.</td></tr></tbody></table></div>
 </div>
 </section>
@@ -117,10 +118,16 @@ function qr(target,payload,size=250){target.innerHTML="";new QRCode(target,{text
 function sessionQrPayload(){return activeSession?{...activeSession,rotationBucket:Math.floor(Date.now()/20000)}:null}
 let sessionQrTimer=null;function refreshSessionQr(){if(!activeSession)return;qr($("sessionQr"),sessionQrPayload(),280);const left=20-(Math.floor(Date.now()/1000)%20);showStatus("sessionStatus","Rotating QR · refreshes in "+left+"s · session expires at "+new Date(activeSession.expiresAt).toLocaleTimeString(),"good")}
 function parsePayload(text){try{return JSON.parse(text)}catch(e){return null}}
+function localDateKey(value){const d=new Date(value);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function todayKey(){return localDateKey(Date.now())}
+function selectedDayRecords(){const selected=$("attendanceDate").value||todayKey();return data.records.filter(r=>localDateKey(r.scannedAt||r.submittedAt)===selected)}
 function renderRecords(){
- const body=$("recordsTable");if(!data.records.length){body.innerHTML='<tr><td colspan="5" class="muted">No attendance records yet.</td></tr>';return}
- body.innerHTML=data.records.slice().reverse().slice(0,100).map(r=>'<tr><td>'+esc(r.name)+'</td><td>'+esc(r.studentId)+'</td><td>'+esc(r.course)+' · '+esc(r.group)+'</td><td>'+esc(new Date(r.submittedAt).toLocaleString())+'</td><td>'+esc(r.validation)+'</td></tr>').join("");
+ const body=$("recordsTable");if(!$("attendanceDate").value){let saved="";try{saved=localStorage.getItem("offlineQRAttendance.selectedDay")||""}catch(e){}$("attendanceDate").value=saved||todayKey()}
+ const selected=$("attendanceDate").value||todayKey(),records=selectedDayRecords();$("daySummary").textContent=records.length+" record"+(records.length===1?"":"s")+" for "+selected;
+ if(!records.length){body.innerHTML='<tr><td colspan="5" class="muted">No attendance records for this date.</td></tr>';return}
+ body.innerHTML=records.slice().sort((a,b)=>(b.scannedAt||b.submittedAt)-(a.scannedAt||a.submittedAt)).map(r=>'<tr><td>'+esc(r.name)+'</td><td>'+esc(r.studentId)+'</td><td>'+esc(r.course)+' · '+esc(r.group)+'</td><td>'+esc(new Date(r.scannedAt||r.submittedAt).toLocaleTimeString())+'</td><td>'+esc(r.validation)+'</td></tr>').join("");
 }
+$("attendanceDate").addEventListener("change",()=>{try{localStorage.setItem("offlineQRAttendance.selectedDay",$("attendanceDate").value)}catch(e){}renderRecords()});
 function setMode(mode){const isL=mode==="lecturer";$("lecturerPanel").classList.toggle("hidden",!isL);$("studentPanel").classList.toggle("hidden",isL);$("lecturerTab").classList.toggle("active",isL);$("studentTab").classList.toggle("active",!isL);stopCamera()}
 $("lecturerTab").addEventListener("click",()=>setMode("lecturer"));$("studentTab").addEventListener("click",()=>setMode("student"));
 $("createSession").addEventListener("click",()=>{
@@ -170,7 +177,9 @@ function acceptAttendance(p){
 $("processManual").addEventListener("click",()=>{const text=$("manualPayload").value.trim();if(!text){showStatus("lecturerScanStatus","Paste the QR payload first.","warn");return}handleScanned(text,"lecturerScanStatus")});
 function downloadBlob(content,type,filename){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function csvCell(v){return '"'+String(v??"").replace(/"/g,'""')+'"'}
-$("exportCsv").addEventListener("click",()=>{if(!data.records.length){alert("There are no attendance records to export yet.");return}const rows=[["COURSE","DEPARTMENT","GROUP","STUDENT NAME","REG ID","STUDENT DEPARTMENT","SUBMITTED AT","SCANNED AT","VALIDATION","SESSION ID"],...data.records.map(r=>[r.course,r.department,r.group,r.name,r.studentId,r.studentDepartment,new Date(r.submittedAt).toISOString(),new Date(r.scannedAt).toISOString(),r.validation,r.sessionId])];downloadBlob("\ufeff"+rows.map(r=>r.map(csvCell).join(",")).join("\r\n"),"text/csv;charset=utf-8","offline-attendance-"+new Date().toISOString().slice(0,10)+".csv")});
+function exportRecordsCsv(records,filename){if(!records.length){alert("There are no attendance records for this selection.");return}const rows=[["COURSE","DEPARTMENT","GROUP","STUDENT NAME","REG ID","STUDENT DEPARTMENT","SUBMITTED AT","SCANNED AT","VALIDATION","SESSION ID"],...records.map(r=>[r.course,r.department,r.group,r.name,r.studentId,r.studentDepartment,new Date(r.submittedAt||r.scannedAt).toISOString(),new Date(r.scannedAt||r.submittedAt).toISOString(),r.validation,r.sessionId])];downloadBlob("\ufeff"+rows.map(r=>r.map(csvCell).join(",")).join("\r\n"),"text/csv;charset=utf-8",filename)}
+$("exportCsv").addEventListener("click",()=>{const day=$("attendanceDate").value||todayKey();exportRecordsCsv(selectedDayRecords(),"offline-attendance-"+day+".csv")});
+$("exportAllCsv").addEventListener("click",()=>exportRecordsCsv(data.records,"offline-attendance-all-days-"+todayKey()+".csv"));
 $("exportBackup").addEventListener("click",()=>downloadBlob(JSON.stringify({exportedAt:new Date().toISOString(),sessions:data.sessions,records:data.records},null,2),"application/json","offline-attendance-backup.json"));
 $("clearRecords").addEventListener("click",()=>{if(!confirm("Delete all saved sessions and attendance records from this device? Export a backup first. This cannot be undone."))return;data={sessions:[],records:[]};saveData();activeSession=null;$("sessionQr").innerHTML='<span class="muted">Your session QR will appear here.</span>';$("printSession").disabled=true;showStatus("sessionStatus","Local records cleared.")});
 window.addEventListener("online",renderStats);window.addEventListener("offline",renderStats);
