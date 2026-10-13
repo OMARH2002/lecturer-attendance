@@ -3,7 +3,10 @@ import { db } from "hatchable";
 export const access = "public";
 export const methods = ["GET", "PUT", "OPTIONS"];
 const AUTH_URL = "https://lecturer-attendance.hatchable.site/api/lecturer-auth";
-const ALLOWED_ORIGINS = new Set(["https://offline-qr.hatchable.site"]);
+const ALLOWED_ORIGINS = new Set([
+  "https://offline-qr.hatchable.site",
+  "https://lecturer-offline-qr.web.app"
+]);
 
 function cors(req, res) {
   const origin = req.headers?.origin || "";
