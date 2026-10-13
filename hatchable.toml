@@ -1,0 +1,5 @@
+# Hatchable project manifest. This file marks the folder as a
+# Hatchable project and declares the services it uses.
+# Reference: https://hatchable.com/docs/developers/config
+name = "LECTURER Offline QR Attendance"
+description = "Offline-first QR attendance for Android and iPhone with lecturer-side scanning, duplicate rejection, and CSV export."
