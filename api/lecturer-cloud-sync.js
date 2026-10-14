@@ -47,10 +47,25 @@ export default async function(req, res) {
   const records = Array.isArray(snapshot.records) ? snapshot.records : [];
   const roster = Array.isArray(snapshot.roster) ? snapshot.roster : [];
   if (sessions.length > 20000 || records.length > 100000 || roster.length > 100000) return res.status(413).json({ error: "The attendance dataset is too large to sync in one request." });
-  const clean = { sessions, records, roster, schemaVersion: 1, savedAt: Date.now() };
+  // Attendance is append-preserving across devices: never let a stale browser snapshot
+  // erase sessions or records that were already synced by another device.
+  const existingResult = await db.query("SELECT snapshot FROM lecturer_attendance_snapshots WHERE lecturer_id = $1", [owner]);
+  const existing = existingResult.rows[0]?.snapshot || {};
+  const merge = (oldItems, newItems, keyFn) => {
+    const map = new Map();
+    for (const item of [...(Array.isArray(oldItems) ? oldItems : []), ...(Array.isArray(newItems) ? newItems : [])]) {
+      const key = keyFn(item);
+      if (key) map.set(key, { ...(map.get(key) || {}), ...item });
+    }
+    return Array.from(map.values());
+  };
+  const mergedSessions = merge(existing.sessions, sessions, x => x?.sessionId);
+  const mergedRecords = merge(existing.records, records, x => x?.sessionId && x?.studentId ? String(x.sessionId) + "|" + String(x.studentId).trim().toUpperCase() : "");
+  const mergedRoster = merge(existing.roster, roster, x => x?.studentId ? String(x.studentId).trim().toUpperCase() : "");
+  const clean = { sessions: mergedSessions, records: mergedRecords, roster: mergedRoster, schemaVersion: 1, savedAt: Date.now() };
   await db.query(
     "INSERT INTO lecturer_attendance_snapshots (lecturer_id, snapshot, updated_at) VALUES ($1, $2::jsonb, now()) ON CONFLICT (lecturer_id) DO UPDATE SET snapshot = EXCLUDED.snapshot, updated_at = now()",
     [owner, JSON.stringify(clean)]
   );
-  return res.json({ ok: true, updatedAt: Date.now(), sessions: sessions.length, records: records.length, roster: roster.length });
+  return res.json({ ok: true, updatedAt: Date.now(), sessions: mergedSessions.length, records: mergedRecords.length, roster: mergedRoster.length });
 }
