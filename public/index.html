@@ -1,6 +1,12 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script>
+/* Keep all API requests on the canonical Firebase Hosting origin allowed by the Cloudflare Worker CORS policy. */
+if (location.hostname === "lecturer-offline-qr.firebaseapp.com") {
+  location.replace("https://lecturer-offline-qr.web.app" + location.pathname + location.search + location.hash);
+}
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#173b66">
