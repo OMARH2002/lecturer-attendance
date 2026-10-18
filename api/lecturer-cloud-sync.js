@@ -1,7 +1,7 @@
 import { db } from "hatchable";
 
 export const access = "public";
-export const methods = ["GET", "PUT", "OPTIONS"];
+export const methods = ["GET", "POST", "OPTIONS"];
 const AUTH_URL = "https://lecturer-admin-api.amorahany36002.workers.dev/";
 const ALLOWED_ORIGINS = new Set([
   "https://lecturer-offline-qr.web.app"
@@ -11,7 +11,7 @@ function cors(req, res) {
   const origin = req.headers?.origin || "";
   if (ALLOWED_ORIGINS.has(origin)) res.setHeader("Access-Control-Allow-Origin", origin);
   res.setHeader("Vary", "Origin");
-  res.setHeader("Access-Control-Allow-Methods", "GET, PUT, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Cache-Control", "no-store");
 }
@@ -61,7 +61,7 @@ async function loadLecturerSnapshot(lecturerId) {
 export default async function(req, res) {
   cors(req, res);
   if (req.method === "OPTIONS") return res.status(204).send("");
-  if (req.method !== "GET" && req.method !== "PUT") {
+  if (req.method !== "GET" && req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed." });
   }
 
