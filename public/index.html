@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
 <script>
+// Global fallback for scripts that reference AUTH_API outside the main application closure.
+window.AUTH_API = "https://lecturer-central-api.amorahany36002.workers.dev/api/lecturer-auth";
+var AUTH_API = window.AUTH_API;
 /* Keep all API requests on the canonical Firebase Hosting origin allowed by the Cloudflare Worker CORS policy. */
 if (location.hostname === "lecturer-offline-qr.firebaseapp.com") {
   location.replace("https://lecturer-offline-qr.web.app" + location.pathname + location.search + location.hash);
