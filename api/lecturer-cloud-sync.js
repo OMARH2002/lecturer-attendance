@@ -2,7 +2,7 @@ import { db } from "hatchable";
 
 export const access = "public";
 export const methods = ["GET", "PUT", "OPTIONS"];
-const AUTH_URL = "lecturer-central-api.amorahany36002.workers.dev";
+const AUTH_URL = "https://lecturer-admin-api.amorahany36002.workers.dev/";
 const ALLOWED_ORIGINS = new Set([
   "https://lecturer-offline-qr.web.app"
 ]);
