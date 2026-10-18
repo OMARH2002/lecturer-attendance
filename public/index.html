@@ -122,6 +122,7 @@ const API_ENDPOINTS = {
   lecturerCloudSync: `${API_BASE_URL}/api/lecturer-cloud-sync`,
   adminLecturers: `${API_BASE_URL}/api/admin/lecturers`,
 };
+const AUTH_API = API_ENDPOINTS.lecturerAuth;
 const AUTH_TOKEN_KEY = "lecturerAttendance.authToken";
 const AUTH_PROFILE_KEY = "lecturerAttendance.authProfile";
 const OFFLINE_LOGIN_KEY = "lecturerAttendance.offlineLogin";let authToken=localStorage.getItem(AUTH_TOKEN_KEY)||"", authProfile=readAuthProfile(), pendingPasswordToken="", pendingPasswordProfile=null;
