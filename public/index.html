@@ -116,14 +116,14 @@ footer{max-width:980px;margin:0 auto;padding:0 18px 24px;color:var(--muted);font
 "use strict";
 const $=id=>document.getElementById(id);
 const STORE="offlineQRAttendance.v1", ROSTER_STORE="offlineQRAttendance.roster.v1";
-
+const API_ADMIN = "https://lecturer-admin-api.amorahany36002.workers.dev";
 const API_BASE_URL =
   "https://lecturer-central-api.amorahany36002.workers.dev";
 
 const API_ENDPOINTS = {
-  lecturerAuth: `${API_BASE_URL}/api/lecturer-auth`,
+  lecturerAuth: `${API_ADMIN}/api/lecturer-auth`,
   lecturerCloudSync: `${API_BASE_URL}/api/lecturer-cloud-sync`,
-  adminLecturers: `${API_BASE_URL}/api/admin/lecturers`,
+  adminLecturers: `${API_ADMIN}/api/admin/lecturers`,
 };
 const AUTH_API = API_ENDPOINTS.lecturerAuth;
 const AUTH_TOKEN_KEY = "lecturerAttendance.authToken";
